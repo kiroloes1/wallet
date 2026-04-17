@@ -21,7 +21,7 @@ const adminRoute=require(`${__dirname}/routes/adminRoute`);
 const dashboard=require(`${__dirname}/routes/reports`);
 const backup=require(`${__dirname}/routes/backup`);
 
-config.connectDB("mongodb+srv://kerosystem12_db_user:Rf3Ee22PGTcWTJse@wallet.hmgg7hy.mongodb.net/wallet?retryWrites=true&w=majority");
+config.connectDB("mongodb+srv://kerosystem12_db_user:Rf3Ee22PGTcWTJse@wallet.hmgg7hy.mongodb.net/walletDB?retryWrites=true&w=majority");
 
 
 
