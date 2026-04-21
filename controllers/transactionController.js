@@ -5,8 +5,9 @@ const mongoose=require('mongoose')
 // create transaction
 // create transaction
 exports.createTransactions = async (req, res) => {
+           const session = await mongoose.startSession();
     try {
-         const session = await mongoose.startSession();
+  
          session.startTransaction();
         const {
             senderName,
