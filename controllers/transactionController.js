@@ -207,7 +207,8 @@ exports.createTransactions = async (req, res) => {
         session.endSession();
 
         return res.status(400).json({
-            message: err.message
+            message: err.message,
+             stack: err.stack
         });
     }
 };
