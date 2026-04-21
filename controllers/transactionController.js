@@ -3,8 +3,11 @@ const WalletModel=require(`${__dirname}/../models/wellet`);
 const mongoose=require('mongoose')
 
 // create transaction
+// create transaction
 exports.createTransactions = async (req, res) => {
     try {
+         const session = await mongoose.startSession();
+         session.startTransaction();
         const {
             senderName,
             receiverName,
@@ -18,24 +21,40 @@ exports.createTransactions = async (req, res) => {
 
         // 1. Validation
         if (!type || !amount || !walletId) {
-            return res.status(400).json({
-                message: "يجب ملئ جميع الحقول المطلوبه"
-            });
+             throw new Error(
+                "يجب ملئ جميع الحقول المطلوبه"
+            );
+        }
+
+        if (amount <= 0) {
+             throw new Error(
+                 "المبلغ لازم يكون أكبر من صفر"
+            );
         }
 
         if(senderPhone==receiverPhone){
-            return res.status(400).json({
-                message: "لا يمكن اجراء تحويل ذاتي "
-            });
+             throw new Error(
+             "لا يمكن اجراء تحويل ذاتي "
+            );
         }
 
         // 2. Get walletA (target)
-        const walletA = await WalletModel.findById(walletId);
-       checkMonthlyReset(walletA);
+        const walletA = await WalletModel.findById(walletId).session(session);
+
         if (!walletA) {
-            return res.status(404).json({
-                message: "هذه المحفظة غير موجوده"
-            });
+             throw new Error(
+                 "هذه المحفظة غير موجوده"
+            );
+        }
+
+     if (checkMonthlyReset(walletA)) {
+            await walletA.save({ session });
+        }
+
+     if (walletA.status !== "active") {
+             throw new Error(
+             "هذه المحفظة غير نشظه"
+            );
         }
         let isInvalid = false;
 
@@ -52,47 +71,61 @@ exports.createTransactions = async (req, res) => {
         }
 
         if (isInvalid) {
-            return res.status(400).json({
-                message: "رقم المحفظة لا يطابق نوع العملية"
-            });
+             throw new Error(
+              "رقم المحفظة لا يطابق نوع العملية"
+            );
         }
 
-        if (walletA.status !== "active") {
-            return res.status(400).json({
-                message: "هذه المحفظة غير نشظه"
-            });
-        }
+
 
         // 3. Find walletB (optional)
         let walletB = null;
 
         if (type === "send") {
-            walletB = await WalletModel.findOne({ phoneNumber: receiverPhone });
+            walletB = await WalletModel.findOne({ phoneNumber: receiverPhone }).session(session);
         } else if (type === "receive") {
-            walletB = await WalletModel.findOne({ phoneNumber: senderPhone });
+            walletB = await WalletModel.findOne({ phoneNumber: senderPhone }).session(session);
         }
-        if (walletB) checkMonthlyReset(walletB);
+        if (walletB) {
+                 if (checkMonthlyReset(walletB)) {
+                await walletB.save({ session });
+            }
+        }
+
+                        // B affected SAME TYPE LOGIC (mirrored operation)
+       if (walletB && walletB.status !== "active") {
+             throw new Error(
+            "المحفظه غير نشطه" + walletB.walletName
+            );
+        }
 
         const isInternalTransfer = Boolean(walletB);
 
         // 4. VALIDATION (only on A)
         if (walletA.balance < amount && type=="send") {
-            return res.status(400).json({
-                message: "رصيد هذه المحفظه غير كافي "
-            });
+             throw new Error( "رصيد هذه المحفظه غير كافي "
+          );
         }
 
-        if (type === "send" && walletA.balance - amount < 0) {
-            return res.status(400).json({
-                 message: "رصيد هذه المحفظه غير كافي "
-            });
+        if (type === "send" && ((walletA.balance - amount < 0) ) ){
+             throw new Error( "رصيد هذه المحفظه غير كافي "
+            );
         }
 
-        if ( ( (walletA.balance + amount ) > walletA.Limit) && type === "receive") {
-            return res.status(400).json({
-                message: "هذه العمليه ستجعل المحفظه تتخطي limit  فلا يمكن تنفيذها"
-            });
+
+        
+        if (type === "send" && ( (walletA.monthlyOutgoing + amount) )> walletA.Limit) {
+             throw new Error( "هذه العمليه ستجعل المحفظه تتخطي limit  فلا يمكن تنفيذها"
+            );
         }
+
+
+        if ( ( (walletA.balance + amount ) > walletA.Limit ||  (walletA.monthlyIncoming + amount ) > walletA.Limit ) && type === "receive") {
+             throw new Error(
+            "هذه العمليه ستجعل المحفظه تتخطي limit  فلا يمكن تنفيذها"
+            );
+        }
+
 
         // 5. APPLY SAME LOGIC TO A AND B (IMPORTANT PART)
 
@@ -111,20 +144,23 @@ exports.createTransactions = async (req, res) => {
         };
 
      
-                // B affected SAME TYPE LOGIC (mirrored operation)
-       if (walletB && walletB.status !== "active") {
-            return res.status(400).json({
-                message: "المحفظه غير نشطه" + walletB.walletName
-            });
-        }
+
 
         if (walletB && type === "send") {
-        if ((walletB.balance + amount) > walletB.Limit) {
-            return res.status(400).json({
-                message: "المستلم لايمكن ان يستقبل هذه المبلغ لانه سوف يتعدي الlimit " + walletB.walletName
-            });
+        if (((walletB.balance + amount) > walletB.Limit) || ((walletB.monthlyIncoming + amount) > walletB.Limit)) {
+             throw new Error(
+              "المستلم لايمكن ان يستقبل هذه المبلغ لانه سوف يتعدي الlimit " + walletB.walletName
+            );
         }
+    }else if (walletB && type === "receive") {
+        if (((walletB.balance - amount) < 0) || ((walletB.monthlyOutgoing + amount) > walletB.Limit)) {
+             throw new Error(
+                "المستلم لايمكن ان يرسل هذه المبلغ لانه سوف يتعدي الlimit " + walletB.walletName
+            );
+        }
+
     }
+    
 
         // A always affected
         const directionA = type === "send" ? -1 : 1;
@@ -137,12 +173,13 @@ exports.createTransactions = async (req, res) => {
             apply(walletB, directionB);
         }
 
-        // 6. SAVE
-        await walletA.save();
-        if (walletB) await walletB.save();
+        // ===== SAVE =====
+        await walletA.save({ session });
+        if (walletB) await walletB.save({ session });
 
-        // 7. TRANSACTION RECORD
-        const transaction = await transactionModel.create({
+
+        // ===== TRANSACTION RECORD =====
+        const transaction = await transactionModel.create([{
             walletId,
             senderName,
             receiverName,
@@ -152,7 +189,13 @@ exports.createTransactions = async (req, res) => {
             notes,
             amount,
             isInternalTransfer
-        });
+        }], { session });
+
+        
+                // ===== COMMIT =====
+        await session.commitTransaction();
+        session.endSession();
+
 
         return res.status(201).json({
             message: "تم العمليه بنجاح" ,
@@ -160,12 +203,14 @@ exports.createTransactions = async (req, res) => {
         });
 
     } catch (err) {
-        return res.status(500).json({
+        await session.abortTransaction();
+        session.endSession();
+
+        return res.status(400).json({
             message: err.message
         });
     }
 };
-
 // update transaction
 exports.updateTransactions = async (req, res) => {
     try {
