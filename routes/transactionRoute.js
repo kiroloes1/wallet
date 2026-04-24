@@ -17,6 +17,8 @@ router.put("/:id",  transactionController.updateTransactions);
 router.get("/",  transactionController.getTransactions);
 
 router.get("/getTransactionByWallet/:phoneNumber",  transactionController.getTransactionByWallet);
+router.get("/getCurrentMonthTransactions",  transactionController.getCurrentMonthTransactions);
+
 
 
 router.get("/:id",  transactionController.getTransactionById);
