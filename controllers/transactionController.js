@@ -473,6 +473,45 @@ exports.getTransactions = async (req, res) => {
     }
 };
 
+// get transaction monthly
+
+exports.getCurrentMonthTransactions = async (req, res) => {
+    try {
+        const startOfMonth = new Date();
+        startOfMonth.setDate(1);
+        startOfMonth.setHours(0, 0, 0, 0);
+
+        const endOfMonth = new Date();
+        endOfMonth.setMonth(endOfMonth.getMonth() + 1);
+        endOfMonth.setDate(0);
+        endOfMonth.setHours(23, 59, 59, 999);
+
+        const transactions = await transactionModel.find({
+            createdAt: {
+                $gte: startOfMonth,
+                $lte: endOfMonth
+            }
+        })
+        .populate("walletId", "walletName ownerName phoneNumber balance")
+        .sort({ createdAt: -1 });
+
+        res.status(200).json({
+            success: true,
+            message: "All monthly transactions fetched successfully",
+            count: transactions.length,
+            data: transactions
+        });
+
+    } catch (error) {
+        res.status(500).json({
+            success: false,
+            message: "Error fetching monthly transactions",
+            error: error.message
+        });
+    }
+};
+
+
 
 const checkMonthlyReset = (wallet) => {
     const now = new Date();
