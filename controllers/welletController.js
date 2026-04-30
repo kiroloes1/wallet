@@ -320,23 +320,35 @@ exports.unfreezeWallet = async (req, res) => {
     }
 };
 
+function toEgyptTime(date) {
+    return new Date(
+        date.toLocaleString("en-US", { timeZone: "Africa/Cairo" })
+    );
+}
+
 function checkMonthlyReset(wallet) {
     const now = new Date();
-
-    const startOfCurrentMonth = new Date(
-        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
-    );
 
     const lastReset = wallet.lastReset
         ? new Date(wallet.lastReset)
         : new Date(0);
 
-    console.log("=== DEBUG ===");
-    console.log("NOW:", now.toISOString());
-    console.log("START MONTH:", startOfCurrentMonth.toISOString());
-    console.log("LAST RESET:", lastReset.toISOString());
+    const nowEG = toEgyptTime(now);
+    const lastResetEG = toEgyptTime(lastReset);
 
-    const isNewMonth = lastReset < startOfCurrentMonth;
+    const startOfCurrentMonthEG = new Date(
+        Date.UTC(
+            nowEG.getUTCFullYear(),
+            nowEG.getUTCMonth(),
+            1
+        )
+    );
+
+    console.log("NOW EG:", nowEG);
+    console.log("LAST RESET EG:", lastResetEG);
+    console.log("START MONTH EG:", startOfCurrentMonthEG);
+
+    const isNewMonth = lastResetEG < startOfCurrentMonthEG;
 
     console.log("IS NEW MONTH:", isNewMonth);
 
