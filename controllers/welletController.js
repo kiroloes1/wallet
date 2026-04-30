@@ -132,26 +132,11 @@ exports.deleteWallet = async (req, res) => {
 
 exports.getAllWallets = async (req, res) => {
     try {
+        let wallets = await walletModel.find().sort({ createdAt: -1 });
 
-        const wallets = await walletModel.find().sort({ createdAt: -1 });
-
-        const now = new Date();
-
-        // نعدي على كل Wallet
         for (let wallet of wallets) {
-
-            const last = new Date(wallet.lastReset);
-
-            if (
-                now.getMonth() !== last.getMonth() ||
-                now.getFullYear() !== last.getFullYear()
-            ) {
-                wallet.monthlyIncoming = 0;
-                wallet.monthlyOutgoing = 0;
-                wallet.lastReset = now;
-
-                await wallet.save(); // نحفظ التعديل
-            }
+            checkMonthlyReset(wallet);
+            await wallet.save(); // update لو حصل reset
         }
 
         res.status(200).json({
@@ -335,15 +320,17 @@ exports.unfreezeWallet = async (req, res) => {
 
 function checkMonthlyReset(wallet) {
     const now = new Date();
-    const last = new Date(wallet.lastReset);
 
-    if (
-        now.getMonth() !== last.getMonth() ||
-        now.getFullYear() !== last.getFullYear()
-    ) {
+    // أول يوم في الشهر الحالي
+    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+    const lastReset = new Date(wallet.lastReset);
+
+    // لو lastReset قبل بداية الشهر الحالي => اعمل reset
+    if (lastReset < startOfCurrentMonth) {
         wallet.monthlyIncoming = 0;
         wallet.monthlyOutgoing = 0;
-        wallet.lastReset = now;
+        wallet.lastReset = now.toISOString();
     }
 
     return wallet;
