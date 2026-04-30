@@ -319,26 +319,27 @@ exports.unfreezeWallet = async (req, res) => {
 
 
 function checkMonthlyReset(wallet) {
+ 
     const now = new Date();
 
-    // أول يوم في الشهر الحالي
-    const startOfCurrentMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+  
+    const startOfCurrentMonth = new Date(
+        Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)
+    );
 
-    const lastReset = new Date(wallet.lastReset);
+    const lastReset = wallet.lastReset
+        ? new Date(wallet.lastReset)
+        : null;
 
-    // لو lastReset قبل بداية الشهر الحالي => اعمل reset
-    if (lastReset < startOfCurrentMonth) {
+    let changed = false;
+
+  
+    if (!lastReset || lastReset < startOfCurrentMonth) {
         wallet.monthlyIncoming = 0;
         wallet.monthlyOutgoing = 0;
-        wallet.lastReset = now;
+        wallet.lastReset = now; 
+        changed = true;
     }
 
-    console.log({
-    now,
-    startOfCurrentMonth,
-    lastReset: wallet.lastReset,
-    condition: wallet.lastReset < startOfCurrentMonth
-});
-
-    return wallet;
+    return changed;
 }
