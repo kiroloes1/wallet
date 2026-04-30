@@ -4,6 +4,19 @@ const Transaction = require(`${__dirname}/../models/transactions`);
 exports.getDashboard = async (req, res) => {
   try {
 
+    const now = new Date();
+const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1);
+
+await Wallet.updateMany(
+  { lastReset: { $lt: startOfMonth } },
+  {
+    $set: {
+      monthlyIncoming: 0,
+      monthlyOutgoing: 0,
+      lastReset: now
+    }
+  }
+);
   
     // Wallet Stats
   
