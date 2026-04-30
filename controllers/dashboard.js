@@ -27,14 +27,26 @@ await Wallet.updateMany(
     const inactiveWallets = await Wallet.countDocuments({ status: "inactive" });
 
     // المحافظ القريبة من limit (مثلاً 90%)
-    const nearLimitWallets = await Wallet.countDocuments({
+const nearMonthlyLimit = await Wallet.countDocuments({
+  $or: [
+    {
       $expr: {
         $gte: [
-          "$balance",
-          { $multiply: ["$Limit", 0.9] }
+          "$monthlyOutgoing",
+          { $multiply: ["$Limit", 0.75] }
         ]
       }
-    });
+    },
+    {
+      $expr: {
+        $gte: [
+          "$monthlyIncoming",
+          { $multiply: ["$Limit", 0.75] }
+        ]
+      }
+    }
+  ]
+});
 
     // إجمالي الفلوس في كل المحافظ
     const totalBalanceResult = await Wallet.aggregate([
