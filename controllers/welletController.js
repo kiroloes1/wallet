@@ -135,8 +135,11 @@ exports.getAllWallets = async (req, res) => {
         let wallets = await walletModel.find().sort({ createdAt: -1 });
 
         for (let wallet of wallets) {
-            checkMonthlyReset(wallet);
-            await wallet.save(); // update لو حصل reset
+                const changed = checkMonthlyReset(wallet);
+
+                if (changed) {
+                    await wallet.save();
+                }
         }
 
         res.status(200).json({
@@ -320,17 +323,19 @@ exports.unfreezeWallet = async (req, res) => {
 
 function checkMonthlyReset(wallet) {
     const now = new Date();
-    const last = new Date(wallet.lastReset);
+    const last = wallet.lastReset ? new Date(wallet.lastReset) : new Date(0);
 
     const isNewMonth =
         now.getMonth() !== last.getMonth() ||
         now.getFullYear() !== last.getFullYear();
 
-    if (isNewMonth) {
-        wallet.monthlyIncoming = 0;
-        wallet.monthlyOutgoing = 0;
-        wallet.lastReset = now;
+    if (!isNewMonth) {
+        return false; // مفيش تغيير
     }
 
-    return wallet;
+    wallet.monthlyIncoming = 0;
+    wallet.monthlyOutgoing = 0;
+    wallet.lastReset = now;
+
+    return true; // حصل تغيير
 }
