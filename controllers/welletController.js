@@ -330,8 +330,15 @@ function checkMonthlyReset(wallet) {
     if (lastReset < startOfCurrentMonth) {
         wallet.monthlyIncoming = 0;
         wallet.monthlyOutgoing = 0;
-        wallet.lastReset = now.toISOString();
+        wallet.lastReset = now;
     }
+
+    console.log({
+    now,
+    startOfCurrentMonth,
+    lastReset: wallet.lastReset,
+    condition: wallet.lastReset < startOfCurrentMonth
+});
 
     return wallet;
 }
