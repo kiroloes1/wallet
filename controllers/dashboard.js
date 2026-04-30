@@ -27,7 +27,7 @@ await Wallet.updateMany(
     const inactiveWallets = await Wallet.countDocuments({ status: "inactive" });
 
     // المحافظ القريبة من limit (مثلاً 90%)
-const nearMonthlyLimit = await Wallet.countDocuments({
+const nearLimitWallets = await Wallet.countDocuments({
   $or: [
     {
       $expr: {
