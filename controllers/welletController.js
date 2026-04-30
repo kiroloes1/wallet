@@ -320,22 +320,32 @@ exports.unfreezeWallet = async (req, res) => {
     }
 };
 
-
 function checkMonthlyReset(wallet) {
     const now = new Date();
-    const last = wallet.lastReset ? new Date(wallet.lastReset) : new Date(0);
+
+    const last = wallet.lastReset
+        ? new Date(wallet.lastReset)
+        : new Date(0);
+
+    // 🔥 Debug time
+    console.log("=== TIME DEBUG ===");
+    console.log("NOW UTC:", now.toISOString());
+    console.log("NOW Egypt:", now.toLocaleString("en-US", { timeZone: "Africa/Cairo" }));
+    console.log("LAST RESET:", last.toISOString());
 
     const isNewMonth =
-        now.getMonth() !== last.getMonth() ||
-        now.getFullYear() !== last.getFullYear();
+        now.getUTCFullYear() !== last.getUTCFullYear() ||
+        now.getUTCMonth() !== last.getUTCMonth();
 
-    if (!isNewMonth) {
-        return false; // مفيش تغيير
-    }
+    console.log("IS NEW MONTH:", isNewMonth);
+
+    if (!isNewMonth) return false;
 
     wallet.monthlyIncoming = 0;
     wallet.monthlyOutgoing = 0;
     wallet.lastReset = now;
 
-    return true; // حصل تغيير
+    console.log("RESET DONE ✔");
+
+    return true;
 }
