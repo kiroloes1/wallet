@@ -3,11 +3,9 @@ const WalletModel=require(`${__dirname}/../models/wellet`);
 const mongoose=require('mongoose')
 
 // create transaction
-// create transaction
 exports.createTransactions = async (req, res) => {
-           const session = await mongoose.startSession();
     try {
-  
+         const session = await mongoose.startSession();
          session.startTransaction();
         const {
             senderName,
@@ -208,11 +206,11 @@ exports.createTransactions = async (req, res) => {
         session.endSession();
 
         return res.status(400).json({
-            message: err.message,
-             stack: err.stack
+            message: err.message
         });
     }
 };
+
 // update transaction
 exports.updateTransactions = async (req, res) => {
     try {
@@ -228,7 +226,7 @@ exports.updateTransactions = async (req, res) => {
         }
 
        
-        const oldWalletA = await WalletModel.findById(oldTx.walletId);
+        const oldWalletA = await WalletModel.findById(oldTx.walletId)
         let oldWalletB = null;
         if (oldTx.isInternalTransfer) {
             const phoneB = oldTx.type === "send" ? oldTx.receiverPhone : oldTx.senderPhone;
@@ -399,22 +397,47 @@ exports.deleteTransaction = async (req, res) => {
 };
 
 // get all transaction
+// get all transaction (With Filters)
 exports.getTransactions = async (req, res) => {
     try {
+        const { date, search } = req.query; 
+        let query = {};
+
+        if (date) {
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0);
+            
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999);
+
+            query.createdAt = { $gte: start, $lte: end };
+        }
+
+
+        if (search) {
+            const searchRegex = new RegExp(search, 'i'); 
+            query.$or = [
+                { senderName: searchRegex },
+                { receiverName: searchRegex },
+                { senderPhone: searchRegex },
+                { receiverPhone: searchRegex }
+            ];
+        }
+
         const transactions = await transactionModel
-            .find()
+            .find(query)
             .sort({ createdAt: -1 })
             .populate("walletId");
 
         return res.status(200).json({
-            message: "تم جلب جميع العمليات ",
+            message: "تم جلب العمليات بنجاح",
             count: transactions.length,
             transactions
         });
 
     } catch (err) {
         return res.status(500).json({
-            message: err.message
+            message: "حدث خطأ في جلب البيانات: " + err.message
         });
     }
 };
@@ -526,3 +549,4 @@ const checkMonthlyReset = (wallet) => {
         wallet.lastReset = now;
     }
 };
+
