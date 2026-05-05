@@ -396,13 +396,14 @@ exports.deleteTransaction = async (req, res) => {
     }
 };
 
-// get all transaction
+
 // get all transaction (With Filters)
 exports.getTransactions = async (req, res) => {
     try {
         const { date, search } = req.query; 
         let query = {};
 
+        // 🔹 فلترة بالتاريخ
         if (date) {
             const start = new Date(date);
             start.setHours(0, 0, 0, 0);
@@ -413,14 +414,13 @@ exports.getTransactions = async (req, res) => {
             query.createdAt = { $gte: start, $lte: end };
         }
 
-
+        // 🔹 فلترة بالبحث (بدون RegExp object)
         if (search) {
-            const searchRegex = new RegExp(search, 'i'); 
             query.$or = [
-                { senderName: searchRegex },
-                { receiverName: searchRegex },
-                { senderPhone: searchRegex },
-                { receiverPhone: searchRegex }
+                { senderName: { $regex: search, $options: "i" } },
+                { receiverName: { $regex: search, $options: "i" } },
+                { senderPhone: { $regex: search, $options: "i" } },
+                { receiverPhone: { $regex: search, $options: "i" } }
             ];
         }
 
