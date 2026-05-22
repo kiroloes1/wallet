@@ -26,6 +26,7 @@ config.connectDB("mongodb+srv://kerosystem12_db_user:Rf3Ee22PGTcWTJse@wallet.hmg
 
 
 
+
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 
