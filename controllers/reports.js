@@ -109,55 +109,70 @@ exports.getMerchantReport = async (req, res) => {
 
         let totalSent = 0;
         let totalReceived = 0;
+const details = transactions.map(item => {
 
-        const details = transactions.map(item => {
+    let role = "";
 
-            let role = "";
+    if (item.senderName === name) {
 
-            if (item.senderName === name) {
+        role = "sender";
+        totalSent += item.amount;
 
-                role = "sender";
-                totalSent += item.amount;
+    }
 
+    if (item.receiverName === name) {
+
+        role =
+            role === "sender"
+            ? "sender & receiver"
+            : "receiver";
+
+        totalReceived += item.amount;
+
+    }
+
+    return {
+
+        transactionDate:
+        new Intl.DateTimeFormat(
+            'ar-EG',
+            {
+                year:'numeric',
+                month:'2-digit',
+                day:'2-digit',
+
+                hour:'2-digit',
+                minute:'2-digit',
+
+                hour12:true
             }
+        ).format(item.createdAt),
 
-            if (item.receiverName === name) {
+        rawDate:item.createdAt,
 
-                role =
-                    role === "sender"
-                    ? "sender & receiver"
-                    : "receiver";
+        amount:item.amount,
 
-                totalReceived += item.amount;
+        role,
 
-            }
+        senderName:item.senderName,
 
-            return {
+        senderPhone:item.senderPhone,
 
-                date: item.createdAt,
+        receiverName:item.receiverName,
 
-                amount: item.amount,
+        receiverPhone:item.receiverPhone,
 
-                role,
+        walletNumber:
+        item.walletId?.phoneNumber || "",
 
-                senderName: item.senderName,
+        walletName:
+        item.walletId?.walletName || "",
 
-                senderPhone: item.senderPhone,
+        notes:item.notes
 
-                receiverName: item.receiverName,
+    };
 
-                receiverPhone: item.receiverPhone,
-
-                walletNumber:
-                    item.walletId?.phoneNumber || "",
-
-                walletName:
-                    item.walletId?.walletName || "",
-
-                notes: item.notes
-            };
-
-        });
+});
 
         res.status(200).json({
 
