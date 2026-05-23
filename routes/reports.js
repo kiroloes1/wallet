@@ -13,6 +13,7 @@ router.use(authorizationMiddleware.role('superadmin', 'manager'));
 
 router.get("/",dashboard.getDashboard );
 router.get("/getAllPeople",report.getAllPeople );
+router.get("/getMerchantAnalytics",report.getMerchantAnalytics );
 router.post("/getMerchantReport",report.getMerchantReport );
 
 
