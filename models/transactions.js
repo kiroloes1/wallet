@@ -35,7 +35,12 @@ const transactionSchema=new mongoose.Schema({
     isInternalTransfer:{
         type:Boolean,
         default:false
-    }
+    },
+       createdAt:{
+  type:Date,
+  default:Date.now
+ }
+
 },
   {  timestamps:{
         createdAt:false,
