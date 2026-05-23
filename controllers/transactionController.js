@@ -187,7 +187,8 @@ exports.createTransactions = async (req, res) => {
             type,
             notes,
             amount,
-            isInternalTransfer
+            isInternalTransfer,
+           createdAt: createdAt || new Date()
         }], { session });
 
         
