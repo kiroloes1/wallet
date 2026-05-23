@@ -133,20 +133,7 @@ const details = transactions.map(item => {
 
     return {
 
-        transactionDate:
-        new Intl.DateTimeFormat(
-            'ar-EG',
-            {
-                year:'numeric',
-                month:'2-digit',
-                day:'2-digit',
-
-                hour:'2-digit',
-                minute:'2-digit',
-
-                hour12:true
-            }
-        ).format(item.createdAt),
+        transactionDate:(item.createdAt),
 
         rawDate:item.createdAt,
 
