@@ -36,7 +36,14 @@ const transactionSchema=new mongoose.Schema({
         type:Boolean,
         default:false
     }
-},{timestamps:true});
+},
+  {  timestamps:{
+        createdAt:false,
+        updatedAt:true
+    }}
+);
+
+
 
 const transactionModel=mongoose.model("Transaction",transactionSchema);
 module.exports=transactionModel;
