@@ -73,10 +73,24 @@ exports.getMerchantReport = async (req, res) => {
         const filter = {};
 
         if (name) {
+
+            const cleanName = name.trim();
+
             filter.$or = [
-                { senderName: name },
-                { receiverName: name }
+                {
+                    senderName: {
+                        $regex: `^\\s*${cleanName}\\s*$`,
+                        $options: "i"
+                    }
+                },
+                {
+                    receiverName: {
+                        $regex: `^\\s*${cleanName}\\s*$`,
+                        $options: "i"
+                    }
+                }
             ];
+
         }
 
         if (fromDate || toDate) {
@@ -93,15 +107,13 @@ exports.getMerchantReport = async (req, res) => {
                 end.setHours(23,59,59,999);
 
                 filter.createdAt.$lte = end;
+
             }
 
         }
 
         const transactions = await Transaction.find(filter)
-            .populate(
-                "walletId",
-                "walletName"
-            )
+            .populate("walletId", "walletName")
             .sort({ createdAt: -1 });
 
         let totalSent = 0;
@@ -111,14 +123,20 @@ exports.getMerchantReport = async (req, res) => {
 
             let role = "";
 
-            if (item.senderName === name) {
+            if (
+                item.senderName?.trim() ===
+                name?.trim()
+            ) {
 
                 role = "sender";
                 totalSent += item.amount;
 
             }
 
-            if (item.receiverName === name) {
+            if (
+                item.receiverName?.trim() ===
+                name?.trim()
+            ) {
 
                 role =
                     role === "sender"
@@ -165,8 +183,7 @@ exports.getMerchantReport = async (req, res) => {
             totalReceived,
 
             netAmount:
-                totalReceived -
-                totalSent,
+                totalReceived - totalSent,
 
             transactions: details
 
@@ -182,7 +199,6 @@ exports.getMerchantReport = async (req, res) => {
     }
 
 };
-
 
 exports.getMerchantAnalytics = async (req,res)=>{
 
