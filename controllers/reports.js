@@ -1,7 +1,6 @@
 const Transaction=require(`${__dirname}/../models/transactions`);
 const Wallet=require(`${__dirname}/../models/wellet`);
 const mongoose=require('mongoose')
-
 exports.getAllPeople = async (req, res) => {
     try {
 
@@ -12,9 +11,8 @@ exports.getAllPeople = async (req, res) => {
                 }
             },
             {
-                $group: {
-                    _id: "$senderName",
-                    name: { $first: "$senderName" }
+                $project: {
+                    name: "$senderName"
                 }
             }
         ]);
@@ -26,9 +24,8 @@ exports.getAllPeople = async (req, res) => {
                 }
             },
             {
-                $group: {
-                    _id: "$receiverName",
-                    name: { $first: "$receiverName" }
+                $project: {
+                    name: "$receiverName"
                 }
             }
         ]);
@@ -37,12 +34,7 @@ exports.getAllPeople = async (req, res) => {
 
         const uniquePeople = [
             ...new Map(
-                merged.map(item => [
-                    item.name,
-                    {
-                        name: item.name
-                    }
-                ])
+                merged.map(item => [item.name, item])
             ).values()
         ];
 
@@ -61,7 +53,6 @@ exports.getAllPeople = async (req, res) => {
 
     }
 };
-
 
 exports.getMerchantReport = async (req, res) => {
 
