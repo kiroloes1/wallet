@@ -12,11 +12,7 @@ exports.getAllPeople = async (req, res) => {
             },
             {
                 $project: {
-                    name: {
-                        $trim: {
-                            input: "$senderName"
-                        }
-                    }
+                    name: "$senderName"
                 }
             }
         ]);
@@ -29,25 +25,29 @@ exports.getAllPeople = async (req, res) => {
             },
             {
                 $project: {
-                    name: {
-                        $trim: {
-                            input: "$receiverName"
-                        }
-                    }
+                    name: "$receiverName"
                 }
             }
         ]);
 
         const merged = [...senders, ...receivers];
 
-        const uniquePeople = [
-            ...new Map(
-                merged.map(item => [
-                    item.name,
-                    { name: item.name }
-                ])
-            ).values()
-        ];
+const uniquePeople = [
+    ...new Map(
+        merged.map(item => {
+
+            const cleanName = item.name?.trim();
+
+            return [
+                cleanName,
+                {
+                    name: cleanName
+                }
+            ];
+
+        })
+    ).values()
+];
 
         res.status(200).json({
             success: true,
@@ -64,7 +64,6 @@ exports.getAllPeople = async (req, res) => {
 
     }
 };
-
 exports.getMerchantReport = async (req, res) => {
 
     try {
