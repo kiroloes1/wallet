@@ -103,72 +103,65 @@ exports.getMerchantReport = async (req, res) => {
         const transactions = await Transaction.find(filter)
             .populate(
                 "walletId",
-                "walletName phoneNumber"
+                "walletName"
             )
             .sort({ createdAt: -1 });
 
         let totalSent = 0;
         let totalReceived = 0;
-const details = transactions.map(item => {
 
-    let role = "";
+        const details = transactions.map(item => {
 
-    if (item.senderName === name) {
+            let role = "";
 
-        role = "sender";
-        totalSent += item.amount;
+            if (item.senderName === name) {
 
-    }
+                role = "sender";
+                totalSent += item.amount;
 
-    if (item.receiverName === name) {
+            }
 
-        role =
-            role === "sender"
-            ? "sender & receiver"
-            : "receiver";
+            if (item.receiverName === name) {
 
-        totalReceived += item.amount;
+                role =
+                    role === "sender"
+                    ? "sender & receiver"
+                    : "receiver";
 
-    }
+                totalReceived += item.amount;
 
-    return {
+            }
 
-        transactionDate:(item.createdAt),
+            return {
 
-        rawDate:item.createdAt,
+                transactionDate: item.createdAt,
 
-        amount:item.amount,
+                rawDate: item.createdAt,
 
-        role,
+                amount: item.amount,
 
-        senderName:item.senderName,
+                role,
 
-        senderPhone:item.senderPhone,
+                senderName: item.senderName,
 
-        receiverName:item.receiverName,
+                receiverName: item.receiverName,
 
-        receiverPhone:item.receiverPhone,
+                walletName:
+                    item.walletId?.walletName || "",
 
-        walletNumber:
-        item.walletId?.phoneNumber || "",
+                notes: item.notes
 
-        walletName:
-        item.walletId?.walletName || "",
+            };
 
-        notes:item.notes
-
-    };
-
-});
+        });
 
         res.status(200).json({
 
-            success:true,
+            success: true,
 
-            merchant:name,
+            merchant: name,
 
-            totalTransactions:
-                details.length,
+            totalTransactions: details.length,
 
             totalSent,
 
@@ -178,7 +171,7 @@ const details = transactions.map(item => {
                 totalReceived -
                 totalSent,
 
-            transactions:details
+            transactions: details
 
         });
 
