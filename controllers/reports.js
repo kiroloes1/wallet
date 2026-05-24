@@ -8,15 +8,13 @@ exports.getAllPeople = async (req, res) => {
         const senders = await Transaction.aggregate([
             {
                 $match: {
-                    senderName: { $ne: null },
-                    senderPhone: { $ne: null }
+                    senderName: { $ne: null }
                 }
             },
             {
                 $group: {
-                    _id: "$senderPhone",
-                    name: { $first: "$senderName" },
-                    phone: { $first: "$senderPhone" }
+                    _id: "$senderName",
+                    name: { $first: "$senderName" }
                 }
             }
         ]);
@@ -24,15 +22,13 @@ exports.getAllPeople = async (req, res) => {
         const receivers = await Transaction.aggregate([
             {
                 $match: {
-                    receiverName: { $ne: null },
-                    receiverPhone: { $ne: null }
+                    receiverName: { $ne: null }
                 }
             },
             {
                 $group: {
-                    _id: "$receiverPhone",
-                    name: { $first: "$receiverName" },
-                    phone: { $first: "$receiverPhone" }
+                    _id: "$receiverName",
+                    name: { $first: "$receiverName" }
                 }
             }
         ]);
@@ -42,10 +38,9 @@ exports.getAllPeople = async (req, res) => {
         const uniquePeople = [
             ...new Map(
                 merged.map(item => [
-                    item.phone,
+                    item.name,
                     {
-                        name: item.name,
-                        phone: item.phone
+                        name: item.name
                     }
                 ])
             ).values()
@@ -58,13 +53,14 @@ exports.getAllPeople = async (req, res) => {
         });
 
     } catch (error) {
+
         res.status(500).json({
             success: false,
             message: error.message
         });
+
     }
 };
-
 
 
 exports.getMerchantReport = async (req, res) => {
