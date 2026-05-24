@@ -199,7 +199,6 @@ exports.getMerchantReport = async (req, res) => {
     }
 
 };
-
 exports.getMerchantAnalytics = async (req,res)=>{
 
 try{
@@ -227,14 +226,18 @@ startDate.setHours(0,0,0,0);
 else if(period==="weekly"){
 
 startDate=new Date();
-startDate.setDate(startDate.getDate()-7);
+startDate.setDate(
+startDate.getDate()-7
+);
 
 }
 
 else if(period==="monthly"){
 
 startDate=new Date();
-startDate.setMonth(startDate.getMonth()-1);
+startDate.setMonth(
+startDate.getMonth()-1
+);
 
 }
 
@@ -268,19 +271,16 @@ $lte:endDate
 }
 
 let groupField;
-let phoneField;
 
 if(reportType==="incoming"){
 
 groupField="$senderName";
-phoneField="$senderPhone";
 
 }
 
 else{
 
 groupField="$receiverName";
-phoneField="$receiverPhone";
 
 }
 
@@ -292,12 +292,27 @@ $match:filter
 
 pipeline.push({
 
+$project:{
+
+merchantName:{
+$trim:{
+input:groupField
+}
+},
+
+amount:1,
+
+createdAt:1
+
+}
+
+});
+
+pipeline.push({
+
 $group:{
 
-_id:{
-name:groupField,
-phone:phoneField
-},
+_id:"$merchantName",
 
 totalAmount:{
 $sum:"$amount"
@@ -321,9 +336,7 @@ $project:{
 
 _id:0,
 
-merchantName:"$_id.name",
-
-phone:"$_id.phone",
+merchantName:"$_id",
 
 totalAmount:1,
 
@@ -337,13 +350,17 @@ lastTransaction:1
 
 if(search){
 
+const cleanSearch=
+search.trim();
+
 pipeline.push({
 
 $match:{
 
 merchantName:{
 
-$regex:search,
+$regex:
+`^\\s*${cleanSearch}\\s*$`,
 
 $options:"i"
 
