@@ -15,7 +15,8 @@ exports.createTransactions = async (req, res) => {
             type,
             notes,
             amount,
-            walletId
+            walletId,
+            createdAt
         } = req.body;
 
         // 1. Validation
