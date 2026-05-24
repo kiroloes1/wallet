@@ -12,7 +12,11 @@ exports.getAllPeople = async (req, res) => {
             },
             {
                 $project: {
-                    name: "$senderName"
+                    name: {
+                        $trim: {
+                            input: "$senderName"
+                        }
+                    }
                 }
             }
         ]);
@@ -25,7 +29,11 @@ exports.getAllPeople = async (req, res) => {
             },
             {
                 $project: {
-                    name: "$receiverName"
+                    name: {
+                        $trim: {
+                            input: "$receiverName"
+                        }
+                    }
                 }
             }
         ]);
@@ -34,7 +42,10 @@ exports.getAllPeople = async (req, res) => {
 
         const uniquePeople = [
             ...new Map(
-                merged.map(item => [item.name, item])
+                merged.map(item => [
+                    item.name,
+                    { name: item.name }
+                ])
             ).values()
         ];
 
