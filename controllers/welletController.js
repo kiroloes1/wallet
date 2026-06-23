@@ -366,14 +366,13 @@ function checkMonthlyReset(wallet) {
 
 
 
-
 // new function
 
 // wallet reach to 100% from limit
 exports.getFullLimitWallets = async (req, res) => {
     try {
 
-        const wallets = await Wallet.find({
+        const wallets = await walletModel.find({
             $or: [
                 { $expr: { $gte: ["$monthlyIncoming", "$Limit"] } },
                 { $expr: { $gte: ["$monthlyOutgoing", "$Limit"] } }
@@ -397,7 +396,7 @@ exports.getWarningWallets = async (req, res) => {
 
         const percentage = Number(req.query.percentage) || 25;
 
-        const wallets = await Wallet.find();
+        const wallets = await walletModel.find();
 
         const warningWallets = wallets.filter(wallet => {
 
@@ -418,5 +417,3 @@ exports.getWarningWallets = async (req, res) => {
         });
     }
 };
-
-
