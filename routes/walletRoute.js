@@ -24,6 +24,10 @@ router.get("/getFullLimitWallets",  walletController.getFullLimitWallets);
 // wallet Nearby to limit 
 router.get("/getWarningWallets",  walletController.getWarningWallets);
 
+// wallet Nearby to limit 
+router.get("/searchWallet",  walletController.searchWallet);
+
+
 
 //  Get Wallet By ID
 router.get("/:id",  walletController.getWalletById);
