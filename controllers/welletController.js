@@ -362,3 +362,61 @@ function checkMonthlyReset(wallet) {
 
     return true;
 }
+
+
+
+
+
+// new function
+
+// wallet reach to 100% from limit
+exports.getFullLimitWallets = async (req, res) => {
+    try {
+
+        const wallets = await Wallet.find({
+            $or: [
+                { $expr: { $gte: ["$monthlyIncoming", "$Limit"] } },
+                { $expr: { $gte: ["$monthlyOutgoing", "$Limit"] } }
+            ]
+        });
+
+        res.status(200).json(wallets);
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+
+// wallet Nearby to limit 
+
+exports.getWarningWallets = async (req, res) => {
+    try {
+
+        const percentage = Number(req.query.percentage) || 25;
+
+        const wallets = await Wallet.find();
+
+        const warningWallets = wallets.filter(wallet => {
+
+            const limitValue = wallet.Limit * (percentage / 100);
+
+            return (
+                wallet.monthlyIncoming >= limitValue ||
+                wallet.monthlyOutgoing >= limitValue
+            );
+
+        });
+
+        res.status(200).json(warningWallets);
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
+
+
