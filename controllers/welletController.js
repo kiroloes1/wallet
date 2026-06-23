@@ -417,3 +417,31 @@ exports.getWarningWallets = async (req, res) => {
         });
     }
 };
+
+
+
+exports.searchWallet = async (req, res) => {
+    try {
+        const { search } = req.query;
+
+        if (!search) {
+            return res.status(400).json({
+                message: "يرجى إدخال اسم المحفظة أو رقم الهاتف"
+            });
+        }
+
+        const wallets = await walletModel.find({
+            $or: [
+                { walletName: { $regex: search, $options: "i" } },
+                { phoneNumber: { $regex: search, $options: "i" } }
+            ]
+        });
+
+        res.status(200).json(wallets);
+
+    } catch (error) {
+        res.status(500).json({
+            message: error.message
+        });
+    }
+};
