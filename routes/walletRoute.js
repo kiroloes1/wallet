@@ -18,6 +18,12 @@ router.get("/",  walletController.getAllWallets);
 //  Get All Wallets sugg
 router.get("/getSugg",  walletController.getAllWalletsSugg);
 
+// wallet reach to 100% from limit
+router.get("/getFullLimitWallets",  walletController.getFullLimitWallets);
+
+// wallet Nearby to limit 
+router.get("/getWarningWallets",  walletController.getWarningWallets);
+
 
 //  Get Wallet By ID
 router.get("/:id",  walletController.getWalletById);
