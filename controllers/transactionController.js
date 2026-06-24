@@ -2,6 +2,248 @@ const transactionModel=require(`${__dirname}/../models/transactions`);
 const WalletModel=require(`${__dirname}/../models/wellet`);
 const mongoose=require('mongoose')
 
+
+
+const calculateTransferFees = (
+    amount,
+    senderProvider,
+    receiverProvider
+) => {
+
+
+    if (senderProvider === receiverProvider) {
+        return 1;
+    }
+
+    
+    const fee = amount * 0.005;
+
+    return Math.min(Math.max(fee, 1), 15);
+};
+
+// create transaction
+exports.createTransactionsV2 = async (req, res) => {
+    try {
+         const session = await mongoose.startSession();
+         session.startTransaction();
+        const {
+            senderName,
+            receiverName,
+            senderPhone,
+            receiverPhone,
+            type,
+            notes,
+            amount,
+            walletId,
+            createdAt
+        } = req.body;
+
+        // 1. Validation
+        if (!type || !amount || !walletId) {
+             throw new Error(
+                "يجب ملئ جميع الحقول المطلوبه"
+            );
+        }
+
+        if (amount <= 0) {
+             throw new Error(
+                 "المبلغ لازم يكون أكبر من صفر"
+            );
+        }
+
+        if(senderPhone==receiverPhone){
+             throw new Error(
+             "لا يمكن اجراء تحويل ذاتي "
+            );
+        }
+
+        // 2. Get walletA (target)
+        const walletA = await WalletModel.findById(walletId).session(session);
+
+        if (!walletA) {
+             throw new Error(
+                 "هذه المحفظة غير موجوده"
+            );
+        }
+
+     if (checkMonthlyReset(walletA)) {
+            await walletA.save({ session });
+        }
+
+     if (walletA.status !== "active") {
+             throw new Error(
+             "هذه المحفظة غير نشظه"
+            );
+        }
+        let isInvalid = false;
+
+        if (walletA) {
+        
+            if (type === "send" && walletA.phoneNumber !== senderPhone) {
+                isInvalid = true;
+            }
+
+            
+            if (type === "receive" && walletA.phoneNumber !== receiverPhone) {
+                isInvalid = true;
+            }
+        }
+
+        if (isInvalid) {
+             throw new Error(
+              "رقم المحفظة لا يطابق نوع العملية"
+            );
+        }
+
+
+
+        // 3. Find walletB (optional)
+        let walletB = null;
+
+        if (type === "send") {
+            walletB = await WalletModel.findOne({ phoneNumber: receiverPhone }).session(session);
+        } else if (type === "receive") {
+            walletB = await WalletModel.findOne({ phoneNumber: senderPhone }).session(session);
+        }
+        if (walletB) {
+                 if (checkMonthlyReset(walletB)) {
+                await walletB.save({ session });
+            }
+        }
+
+                        // B affected SAME TYPE LOGIC (mirrored operation)
+       if (walletB && walletB.status !== "active") {
+             throw new Error(
+            "المحفظه غير نشطه" + walletB.walletName
+            );
+        }
+
+        const isInternalTransfer = Boolean(walletB);
+
+        // 4. VALIDATION (only on A)
+        if (walletA.balance < amount && type=="send") {
+             throw new Error( "رصيد هذه المحفظه غير كافي "
+          );
+        }
+
+        if (type === "send" && ((walletA.balance - amount < 0) ) ){
+             throw new Error( "رصيد هذه المحفظه غير كافي "
+            );
+        }
+
+
+        
+        if (type === "send" && ( (walletA.monthlyOutgoing + amount) )> walletA.Limit) {
+             throw new Error( "هذه العمليه ستجعل المحفظه تتخطي limit  فلا يمكن تنفيذها"
+            );
+        }
+
+
+        if ( ( (walletA.balance + amount ) > walletA.Limit ||  (walletA.monthlyIncoming + amount ) > walletA.Limit ) && type === "receive") {
+             throw new Error(
+            "هذه العمليه ستجعل المحفظه تتخطي limit  فلا يمكن تنفيذها"
+            );
+        }
+
+
+        // 5. APPLY SAME LOGIC TO A AND B (IMPORTANT PART)
+
+        const apply = (wallet, sign) => {
+            if (!wallet) return;
+
+            wallet.balance += sign * amount;
+
+            if (sign === 1) {
+                wallet.totalIncoming += amount;
+                wallet.monthlyIncoming += amount;
+            } else {
+                wallet.totalOutgoing += amount;
+                wallet.monthlyOutgoing += amount;
+            }
+        };
+
+     
+
+
+        if (walletB && type === "send") {
+        if (((walletB.balance + amount) > walletB.Limit) || ((walletB.monthlyIncoming + amount) > walletB.Limit)) {
+             throw new Error(
+              "المستلم لايمكن ان يستقبل هذه المبلغ لانه سوف يتعدي الlimit " + walletB.walletName
+            );
+        }
+    }else if (walletB && type === "receive") {
+        if (((walletB.balance - amount) < 0) || ((walletB.monthlyOutgoing + amount) > walletB.Limit)) {
+             throw new Error(
+                "المستلم لايمكن ان يرسل هذه المبلغ لانه سوف يتعدي الlimit " + walletB.walletName
+            );
+        }
+
+    }
+    
+
+        // A always affected
+        const directionA = type === "send" ? -1 : 1;
+        apply(walletA, directionA);
+
+
+
+        if (walletB) {
+            const directionB = directionA * -1;
+            apply(walletB, directionB);
+        }
+
+        // ===== SAVE =====
+        await walletA.save({ session });
+        if (walletB) await walletB.save({ session });
+
+
+        let fees = 0;
+
+
+        fees = calculateTransferFees(
+            amount,
+            receiverName.slice(0,3),
+            senderPhone.slice(0,3)
+        );
+
+
+        // ===== TRANSACTION RECORD =====
+        const transaction = await transactionModel.create([{
+            walletId,
+            senderName,
+            receiverName,
+            senderPhone,
+            receiverPhone,
+            type,
+            notes,
+            amount,
+            isInternalTransfer,
+            fees,
+
+        createdAt: createdAt || new Date()
+        }], { session });
+
+        
+                // ===== COMMIT =====
+        await session.commitTransaction();
+        session.endSession();
+
+
+        return res.status(201).json({
+            message: "تم العمليه بنجاح" ,
+            transaction
+        });
+
+    } catch (err) {
+        await session.abortTransaction();
+        session.endSession();
+
+        return res.status(400).json({
+            message: err.message
+        });
+    }
+};
+
 // create transaction
 exports.createTransactions = async (req, res) => {
     try {
