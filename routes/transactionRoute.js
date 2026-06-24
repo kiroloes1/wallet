@@ -11,6 +11,7 @@ router.use(authorizationMiddleware.role('superadmin', 'manager'));
 
 // Create Wallet
 router.post("/",  transactionController.createTransactions);
+router.post("/V2",  transactionController.createTransactionsV2);
 
 router.put("/:id",  transactionController.updateTransactions);
 
