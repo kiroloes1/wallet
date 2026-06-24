@@ -48,6 +48,10 @@ const walletSchema=new mongoose.Schema({
         type: Number,
         default: 0
         },
+            fees: {
+    type: Number,
+    default: 1
+},
 
 monthlyIncoming: { type: Number, default: 0 },
 monthlyOutgoing: { type: Number, default: 0 },
