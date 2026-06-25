@@ -24,5 +24,7 @@ router.get("/getCurrentMonthTransactions",  transactionController.getCurrentMont
 
 router.get("/:id",  transactionController.getTransactionById);
 
+router.delete("/V2/:id",transactionController.deleteTransactionV2)
+
 router.delete("/:id",transactionController.deleteTransaction)
 module.exports = router;
