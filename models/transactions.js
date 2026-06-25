@@ -39,7 +39,11 @@ const transactionSchema=new mongoose.Schema({
        createdAt:{
   type:Date,
   default:Date.now
- }
+ },
+          fees: {
+    type: Number,
+    default: 0
+},
 
 },
   {  timestamps:{
