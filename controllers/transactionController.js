@@ -845,25 +845,37 @@ exports.deleteTransaction = async (req, res) => {
 //     }
 // };
 // get all transaction (With Filters & Pagination)
+// get all transaction (With Filters & Pagination)
 exports.getTransactions = async (req, res) => {
     try {
-        // 1. استخراج متغيرات الصفحات والفلترة (قيمة افتراضية للصفحة 1 والحد 10)
         const page = parseInt(req.query.page) || 1;
         const limit = parseInt(req.query.limit) || 10;
         const skip = (page - 1) * limit;
 
-        const { date, search } = req.query; 
+        const { date, filterType, search } = req.query; 
         let query = {};
 
-        // 🔹 فلترة بالتاريخ
+        // 🔹 فلترة بالتاريخ ذكية (يومي أو شهري)
         if (date) {
-            const start = new Date(date);
-            start.setHours(0, 0, 0, 0);
-            
-            const end = new Date(date);
-            end.setHours(23, 59, 59, 999);
+            const baseDate = new Date(date);
 
-            query.createdAt = { $gte: start, $lte: end };
+            if (filterType === 'monthly') {
+                // حساب أول يوم في الشهر الساعة 00:00:00
+                const start = new Date(baseDate.getFullYear(), baseDate.getMonth(), 1, 0, 0, 0, 0);
+                // حساب آخر يوم في الشهر الساعة 23:59:59
+                const end = new Date(baseDate.getFullYear(), baseDate.getMonth() + 1, 0, 23, 59, 59, 999);
+                
+                query.createdAt = { $gte: start, $lte: end };
+            } else {
+                // الفلترة اليومية الافتراضية
+                const start = new Date(baseDate);
+                start.setHours(0, 0, 0, 0);
+                
+                const end = new Date(baseDate);
+                end.setHours(23, 59, 59, 999);
+
+                query.createdAt = { $gte: start, $lte: end };
+            }
         }
 
         // 🔹 فلترة بالبحث
@@ -876,10 +888,8 @@ exports.getTransactions = async (req, res) => {
             ];
         }
 
-        // 2. حساب إجمالي عدد المعاملات المتوافقة مع الفلتر (مهم للـ Frontend)
         const totalTransactions = await transactionModel.countDocuments(query);
 
-        // 3. جلب البيانات المحددة بالصفحة الحالية
         const transactions = await transactionModel
             .find(query)
             .sort({ createdAt: -1 })
