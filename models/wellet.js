@@ -50,7 +50,7 @@ const walletSchema=new mongoose.Schema({
         },
             fees: {
     type: Number,
-    default: 1
+    default: 0
 },
 
 monthlyIncoming: { type: Number, default: 0 },
