@@ -234,8 +234,9 @@ const calculateTransferFees = (
 
 // create transaction
 exports.createTransactionsV2 = async (req, res) => {
+     const session = await mongoose.startSession();
     try {
-         const session = await mongoose.startSession();
+        
          session.startTransaction();
         const {
             senderName,
