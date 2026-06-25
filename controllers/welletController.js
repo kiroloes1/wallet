@@ -154,10 +154,11 @@ exports.getAllWallets = async (req, res) => {
     }
 };
 
+
 // get all wallets sugg
 exports.getAllWalletsSugg = async (req, res) => {
     try {
-        const wallets = await walletModel.find({status:"active"},{walletName:1,phoneNumber:1 ,walletProvider:1 ,balance:1 ,ownerName:1 ,Limit:1});
+        const wallets = await walletModel.find({status:"active"},{walletName:1,phoneNumber:1 ,walletProvider:1 ,balance:1 ,ownerName:1 ,Limit:1 ,fees:1});
 
         res.status(200).json({
             message: "تم جلب المحافظ بنجاح",
