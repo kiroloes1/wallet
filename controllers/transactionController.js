@@ -642,8 +642,58 @@ exports.deleteTransaction = async (req, res) => {
 
 
 // get all transaction (With Filters)
+// exports.getTransactions = async (req, res) => {
+//     try {
+//         const { date, search } = req.query; 
+//         let query = {};
+
+//         // 🔹 فلترة بالتاريخ
+//         if (date) {
+//             const start = new Date(date);
+//             start.setHours(0, 0, 0, 0);
+            
+//             const end = new Date(date);
+//             end.setHours(23, 59, 59, 999);
+
+//             query.createdAt = { $gte: start, $lte: end };
+//         }
+
+//         // 🔹 فلترة بالبحث (بدون RegExp object)
+//         if (search) {
+//             query.$or = [
+//                 { senderName: { $regex: search, $options: "i" } },
+//                 { receiverName: { $regex: search, $options: "i" } },
+//                 { senderPhone: { $regex: search, $options: "i" } },
+//                 { receiverPhone: { $regex: search, $options: "i" } }
+//             ];
+//         }
+
+//         const transactions = await transactionModel
+//             .find(query)
+//             .sort({ createdAt: -1 })
+//             .populate("walletId");
+
+//         return res.status(200).json({
+//             message: "تم جلب العمليات بنجاح",
+//             count: transactions.length,
+//             transactions
+//         });
+
+//     } catch (err) {
+//         return res.status(500).json({
+//             message: "حدث خطأ في جلب البيانات: " + err.message
+//         });
+//     }
+// };
+
+// get all transaction (With Filters & Pagination)
 exports.getTransactions = async (req, res) => {
     try {
+        // 1. استخراج متغيرات الصفحات والفلترة (قيمة افتراضية للصفحة 1 والحد 10)
+        const page = parseInt(req.query.page) || 1;
+        const limit = parseInt(req.query.limit) || 10;
+        const skip = (page - 1) * limit;
+
         const { date, search } = req.query; 
         let query = {};
 
@@ -658,7 +708,7 @@ exports.getTransactions = async (req, res) => {
             query.createdAt = { $gte: start, $lte: end };
         }
 
-        // 🔹 فلترة بالبحث (بدون RegExp object)
+        // 🔹 فلترة بالبحث
         if (search) {
             query.$or = [
                 { senderName: { $regex: search, $options: "i" } },
@@ -668,14 +718,25 @@ exports.getTransactions = async (req, res) => {
             ];
         }
 
+        // 2. حساب إجمالي عدد المعاملات المتوافقة مع الفلتر (مهم للـ Frontend)
+        const totalTransactions = await transactionModel.countDocuments(query);
+
+        // 3. جلب البيانات المحددة بالصفحة الحالية
         const transactions = await transactionModel
             .find(query)
             .sort({ createdAt: -1 })
+            .skip(skip)
+            .limit(limit)
             .populate("walletId");
 
         return res.status(200).json({
             message: "تم جلب العمليات بنجاح",
-            count: transactions.length,
+            pagination: {
+                total: totalTransactions,
+                page,
+                limit,
+                pages: Math.ceil(totalTransactions / limit)
+            },
             transactions
         });
 
