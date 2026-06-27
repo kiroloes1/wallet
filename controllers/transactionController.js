@@ -802,49 +802,49 @@ exports.deleteTransaction = async (req, res) => {
 
 
 // get all transaction (With Filters)
-// exports.getTransactions = async (req, res) => {
-//     try {
-//         const { date, search } = req.query; 
-//         let query = {};
+exports.getTransactions2 = async (req, res) => {
+    try {
+        const { date, search } = req.query; 
+        let query = {};
 
-//         // 🔹 فلترة بالتاريخ
-//         if (date) {
-//             const start = new Date(date);
-//             start.setHours(0, 0, 0, 0);
+        // 🔹 فلترة بالتاريخ
+        if (date) {
+            const start = new Date(date);
+            start.setHours(0, 0, 0, 0);
             
-//             const end = new Date(date);
-//             end.setHours(23, 59, 59, 999);
+            const end = new Date(date);
+            end.setHours(23, 59, 59, 999);
 
-//             query.createdAt = { $gte: start, $lte: end };
-//         }
+            query.createdAt = { $gte: start, $lte: end };
+        }
 
-//         // 🔹 فلترة بالبحث (بدون RegExp object)
-//         if (search) {
-//             query.$or = [
-//                 { senderName: { $regex: search, $options: "i" } },
-//                 { receiverName: { $regex: search, $options: "i" } },
-//                 { senderPhone: { $regex: search, $options: "i" } },
-//                 { receiverPhone: { $regex: search, $options: "i" } }
-//             ];
-//         }
+        // 🔹 فلترة بالبحث (بدون RegExp object)
+        if (search) {
+            query.$or = [
+                { senderName: { $regex: search, $options: "i" } },
+                { receiverName: { $regex: search, $options: "i" } },
+                { senderPhone: { $regex: search, $options: "i" } },
+                { receiverPhone: { $regex: search, $options: "i" } }
+            ];
+        }
 
-//         const transactions = await transactionModel
-//             .find(query)
-//             .sort({ createdAt: -1 })
-//             .populate("walletId");
+        const transactions = await transactionModel
+            .find(query)
+            .sort({ createdAt: -1 })
+            .populate("walletId");
 
-//         return res.status(200).json({
-//             message: "تم جلب العمليات بنجاح",
-//             count: transactions.length,
-//             transactions
-//         });
+        return res.status(200).json({
+            message: "تم جلب العمليات بنجاح",
+            count: transactions.length,
+            transactions
+        });
 
-//     } catch (err) {
-//         return res.status(500).json({
-//             message: "حدث خطأ في جلب البيانات: " + err.message
-//         });
-//     }
-// };
+    } catch (err) {
+        return res.status(500).json({
+            message: "حدث خطأ في جلب البيانات: " + err.message
+        });
+    }
+};
 // get all transaction (With Filters & Pagination)
 // get all transaction (With Filters & Pagination)
 exports.getTransactions = async (req, res) => {
